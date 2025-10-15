@@ -36,13 +36,14 @@ export const handler = async (
       user: username,
       password: password,
       multipleStatements: true,
+      database: "HogwartsDb",
     });
     console.log("successfully connected to db: ", connection);
 
     try {
       // TODO: check if payload is formatted properly and has all data
       const x = await connection.execute(
-        `INSERT INTO Notifications VALUES ('${payload.recipient}', '${payload.message}', 'queued')`
+        `INSERT INTO Notifications (recipient, message, status) VALUES ('${payload.recipient}', '${payload.message}', 'queued')`
       );
       return {
         statusCode: 200,

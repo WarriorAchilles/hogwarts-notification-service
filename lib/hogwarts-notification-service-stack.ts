@@ -43,6 +43,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
         },
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      defaultDatabaseName: "HogwartsDb",
     });
     cluster.connections.allowFromAnyIpv4(
       ec2.Port.tcp(3306),
@@ -72,7 +73,13 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: "lambda/executeSqlLambda.handler",
       code: code,
+      vpc,
     });
+    executeSqlLambda.addEnvironment(
+      "DB_HOST",
+      cluster.clusterEndpoint.hostname
+    );
+    executeSqlLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
 
     dbSecret.grantRead(executeSqlLambda);
 
@@ -180,6 +187,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_22_X,
         handler: "lambda/addNotification.handler",
         code: code,
+        vpc,
         timeout: cdk.Duration.seconds(10),
       }
     );
