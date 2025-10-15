@@ -11,7 +11,21 @@ The system is structured as follows:
 
 ![diagram](./hogwarts-api-structure.png)
 
-# TODO: outline database table structure
+Theoretically this could be extended to add a Dead Letter Queue to collect failures
+
+## DB Structure
+
+One table: Notifications
+
+Columns:
+
+- id
+- recipient
+- message
+- status
+- createdAt
+
+## Setup instructions
 
 ## Other stuff
 
