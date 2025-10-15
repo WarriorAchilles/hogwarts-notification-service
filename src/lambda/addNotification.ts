@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-sqs";
 import { SecretsManager } from "aws-sdk";
 import * as mysql from "mysql2/promise";
+import { randomUUID } from "crypto";
 
 const NOTIFICATION_QUEUE_URL = process.env.NOTIFICATION_QUEUE_URL || "";
 const DB_HOST = process.env.DB_HOST || "";
@@ -43,7 +44,9 @@ export const handler = async (
     try {
       // TODO: check if payload is formatted properly and has all data
       const x = await connection.execute(
-        `INSERT INTO Notifications (recipient, message, status) VALUES ('${payload.recipient}', '${payload.message}', 'queued')`
+        `INSERT INTO Notifications (id, recipient, message, status) VALUES ('${randomUUID()}', '${
+          payload.recipient
+        }', '${payload.message}', 'queued')`
       );
       return {
         statusCode: 200,

@@ -61,7 +61,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
 
     const createTableSql = `
       CREATE TABLE IF NOT EXISTS Notifications (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id CHAR(36) PRIMARY KEY,
         recipient VARCHAR(255) NOT NULL,
         message VARCHAR(255) NOT NULL,
         status VARCHAR(255) NOT NULL,
