@@ -34,6 +34,62 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       value: myFunctionUrl.url,
     });
 
+    // retrieve notifications
+    const retrieveNotificationsLambda = new lambda.Function(
+      this,
+      "retrieveNotificationsLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_22_X,
+        handler: "lambda/retrieveNotifications.handler",
+        code: code,
+      }
+    );
+    const retrieveNotificationsLambdaUrl =
+      retrieveNotificationsLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.NONE,
+      });
+    new cdk.CfnOutput(this, "retrieveNotificationsLambdaUrlOutput", {
+      value: retrieveNotificationsLambdaUrl.url,
+    });
+
+    // add notification
+    const addNotificationLambda = new lambda.Function(
+      this,
+      "addNotificationLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_22_X,
+        handler: "lambda/addNotification.handler",
+        code: code,
+      }
+    );
+    const addNotificationLambdaUrl = addNotificationLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+    new cdk.CfnOutput(this, "addNotificationLambdaUrlOutput", {
+      value: addNotificationLambdaUrl.url,
+    });
+
+    // process notification
+    const processNotificationsLambda = new lambda.Function(
+      this,
+      "processNotificationsLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_22_X,
+        handler: "lambda/processNotifications.handler",
+        code: code,
+      }
+    );
+    const processNotificationsLambdaUrl =
+      processNotificationsLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.NONE,
+      });
+    new cdk.CfnOutput(this, "processNotificationsLambdaUrlOutput", {
+      value: processNotificationsLambdaUrl.url,
+    });
+
+    // notification queue
+    // TODO
+
     // API DEFINITION
     const api = new apigw.RestApi(this, "MyApiGateway", {
       restApiName: "MyServiceApi",
@@ -47,12 +103,12 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       notificationsResource.addResource("{recipient}");
     notificationByRecipient.addMethod(
       "GET",
-      new apigw.LambdaIntegration(myFunction)
+      new apigw.LambdaIntegration(retrieveNotificationsLambda)
     );
 
     notificationsResource.addMethod(
       "POST",
-      new apigw.LambdaIntegration(myFunction)
+      new apigw.LambdaIntegration(addNotificationLambda)
     );
   }
 }
