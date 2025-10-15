@@ -24,9 +24,11 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.910.0",
     "aws-cdk-lib": "^2.215.0",
     "aws-sdk": "^2.1692.0",
     "constructs": "^10.4.2",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "mysql2": "^3.15.2"
   }
 }

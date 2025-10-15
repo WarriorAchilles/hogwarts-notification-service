@@ -37,9 +37,17 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
           ec2.InstanceClass.BURSTABLE3,
           ec2.InstanceSize.MEDIUM
         ),
+        publiclyAccessible: true,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    cluster.connections.allowFromAnyIpv4(
+      ec2.Port.tcp(3306),
+      "Allow MySQL access"
+    );
 
     new cdk.CfnOutput(this, "HogwartsDbEndpoint", {
       value: cluster.clusterEndpoint.hostname,
@@ -108,24 +116,6 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
         }),
       ]),
     });
-
-    // lambda function resource
-    const myFunction = new lambda.Function(this, "HelloWorldFunction", {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: "lambda/index.handler",
-      code: code,
-    });
-
-    // lambda function url resource
-    const myFunctionUrl = myFunction.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-    });
-
-    // CloudFormation output for the url
-    new cdk.CfnOutput(this, "myFunctionUrlOutput", {
-      value: myFunctionUrl.url,
-    });
-
     // LAMBDA DEFINITIONS ******************************************
     // retrieve notifications
     const retrieveNotificationsLambda = new lambda.Function(
@@ -144,23 +134,11 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
     new cdk.CfnOutput(this, "retrieveNotificationsLambdaUrlOutput", {
       value: retrieveNotificationsLambdaUrl.url,
     });
-
-    // add notification
-    const addNotificationLambda = new lambda.Function(
-      this,
-      "addNotificationLambda",
-      {
-        runtime: lambda.Runtime.NODEJS_22_X,
-        handler: "lambda/addNotification.handler",
-        code: code,
-      }
+    retrieveNotificationsLambda.addEnvironment(
+      "DB_HOST",
+      cluster.clusterEndpoint.hostname
     );
-    const addNotificationLambdaUrl = addNotificationLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-    });
-    new cdk.CfnOutput(this, "addNotificationLambdaUrlOutput", {
-      value: addNotificationLambdaUrl.url,
-    });
+    retrieveNotificationsLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
 
     // process notification
     const processNotificationsLambda = new lambda.Function(
@@ -179,6 +157,11 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
     new cdk.CfnOutput(this, "processNotificationsLambdaUrlOutput", {
       value: processNotificationsLambdaUrl.url,
     });
+    processNotificationsLambda.addEnvironment(
+      "DB_HOST",
+      cluster.clusterEndpoint.hostname
+    );
+    processNotificationsLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
 
     // notification queue
     const notificationQueue = new sqs.Queue(this, "notificationQueue", {
@@ -189,12 +172,40 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       new SqsEventSource(notificationQueue)
     );
 
+    // add notification
+    const addNotificationLambda = new lambda.Function(
+      this,
+      "addNotificationLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_22_X,
+        handler: "lambda/addNotification.handler",
+        code: code,
+        timeout: cdk.Duration.seconds(10),
+      }
+    );
+    const addNotificationLambdaUrl = addNotificationLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+    addNotificationLambda.addEnvironment(
+      "NOTIFICATION_QUEUE_URL",
+      notificationQueue.queueUrl
+    );
+    addNotificationLambda.addEnvironment(
+      "DB_HOST",
+      cluster.clusterEndpoint.hostname
+    );
+    addNotificationLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
+    new cdk.CfnOutput(this, "addNotificationLambdaUrlOutput", {
+      value: addNotificationLambdaUrl.url,
+    });
+
+    dbSecret.grantRead(retrieveNotificationsLambda);
+    dbSecret.grantRead(addNotificationLambda);
+    dbSecret.grantRead(processNotificationsLambda);
+
     // API DEFINITION ***************************************************
     const api = new apigw.RestApi(this, "MyApiGateway", {
       restApiName: "MyServiceApi",
-      deployOptions: {
-        stageName: "dev",
-      },
     });
 
     const notificationsResource = api.root.addResource("notifications");
