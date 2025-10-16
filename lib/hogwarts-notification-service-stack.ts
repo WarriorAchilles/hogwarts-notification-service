@@ -210,8 +210,9 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
     dbSecret.grantRead(processNotificationsLambda);
 
     // API DEFINITION ***************************************************
-    const api = new apigw.RestApi(this, "MyApiGateway", {
-      restApiName: "MyServiceApi",
+    const api = new apigw.RestApi(this, "HogwartsApiGateway", {
+      restApiName: "HogwartsApi",
+      apiKeySourceType: apigw.ApiKeySourceType.HEADER,
     });
 
     const notificationsResource = api.root.addResource("notifications");
@@ -219,12 +220,44 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       notificationsResource.addResource("{recipient}");
     notificationByRecipient.addMethod(
       "GET",
-      new apigw.LambdaIntegration(retrieveNotificationsLambda)
+      new apigw.LambdaIntegration(retrieveNotificationsLambda),
+      {
+        apiKeyRequired: true,
+      }
     );
 
     notificationsResource.addMethod(
       "POST",
-      new apigw.LambdaIntegration(addNotificationLambda)
+      new apigw.LambdaIntegration(addNotificationLambda),
+      {
+        apiKeyRequired: true,
+      }
     );
+
+    const apiKey = new apigw.ApiKey(this, "HogwartsApiKey", {
+      apiKeyName: "HogwartsNotificationApiKey",
+      description: "The API Key for the Hogwarts Notification API",
+      value: "harryPotterAndTheSorcerersStone", // remove this line and API Gateway will generate an API Key. For the purposes of testing this application, I'm defining a static value here
+    });
+
+    const usagePlan = api.addUsagePlan("HogwartsUsagePlan", {
+      name: "StandardUsagePlan",
+      throttle: {
+        rateLimit: 20,
+        burstLimit: 40,
+      },
+      quota: {
+        limit: 1000,
+        period: apigw.Period.MONTH,
+      },
+    });
+
+    usagePlan.addApiKey(apiKey);
+    usagePlan.addApiStage({
+      stage: api.deploymentStage,
+    });
+    new cdk.CfnOutput(this, "API Key ID", {
+      value: apiKey.keyId,
+    });
   }
 }

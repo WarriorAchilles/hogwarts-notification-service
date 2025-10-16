@@ -11,7 +11,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   try {
     const payload = JSON.parse(event.Records[0].body);
     // log message to simulate message being sent
-    console.log(`Message sent to ${payload.recipient}: ${payload.message}`);
+    console.log(
+      `Owl delivered message to ${payload.recipient}: ${payload.message}`
+    );
 
     // update message record in database
     const db = await getDb(DB_HOST, DB_SECRET);
