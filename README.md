@@ -73,6 +73,8 @@ See the [AWS CDK docs](https://docs.aws.amazon.com/cdk/v2/guide/getting-started.
    npm run deploy
    ```
 
+   **NOTE:** It make take 5-10 minutes to deploy everything.
+
    Once deployed, the API url will be displayed among the resource URLs in the console. It should look something similar to:
 
    ```
