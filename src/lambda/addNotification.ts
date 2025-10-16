@@ -43,10 +43,10 @@ export const handler = async (
 
     const id = randomUUID();
     try {
-      // TODO if I have time, make sure to guard against SQL injection
       // add notification to database
       await db.execute(
-        `INSERT INTO Notifications (id, recipient, message, status) VALUES ('${id}', '${payload.recipient}', '${payload.message}', 'queued')`
+        "INSERT INTO Notifications (id, recipient, message, status) VALUES (?, ?, ?, ?)",
+        [id, payload.recipient, payload.message, "queued"]
       );
     } catch (e) {
       return {

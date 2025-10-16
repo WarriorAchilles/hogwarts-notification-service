@@ -19,7 +19,8 @@ export const handler = async (event: SQSEvent): Promise<void> => {
     const db = await getDb(DB_HOST, DB_SECRET);
     try {
       await db.execute(
-        `UPDATE Notifications SET status = 'delivered' WHERE id = '${payload.notificationId}'`
+        "UPDATE Notifications SET status = 'delivered' WHERE id = ?",
+        [payload.notificationId]
       );
       console.log("sucessfully updated message in database");
     } catch (e) {

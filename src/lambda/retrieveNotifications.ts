@@ -14,12 +14,20 @@ export const handler = async (
     const db = await getDb(DB_HOST, DB_SECRET);
 
     try {
-      let sqlQuery = `SELECT * FROM Notifications WHERE recipient = '${recipient}'`;
+      let items;
       if (event.queryStringParameters && event.queryStringParameters.limit) {
-        sqlQuery += ` LIMIT ${event.queryStringParameters.limit}`;
+        // with limit param
+        items = await db.execute(
+          "SELECT * FROM Notifications WHERE recipient = ? LIMIT ?",
+          [recipient, event.queryStringParameters.limit]
+        );
+      } else {
+        // no limit param
+        items = await db.execute(
+          "SELECT * FROM Notifications WHERE recipient = ?",
+          [recipient]
+        );
       }
-      // TODO if I have time: guard against SQL injection
-      const items = await db.execute(sqlQuery);
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
