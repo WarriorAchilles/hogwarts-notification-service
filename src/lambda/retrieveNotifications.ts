@@ -1,6 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { SecretsManager } from "aws-sdk";
-import * as mysql from "mysql2/promise";
+import getDb from "../util/dbConnector";
 
 const DB_HOST = process.env.DB_HOST || "";
 const DB_SECRET = process.env.DB_SECRET || "";
@@ -11,25 +10,11 @@ export const handler = async (
   console.log("Event received:", JSON.stringify(event, null, 2));
 
   const recipient = "placeholder";
-
-  const secretsManager = new SecretsManager();
-  const secretData = await secretsManager
-    .getSecretValue({ SecretId: DB_SECRET })
-    .promise();
-  const { username, password } = JSON.parse(secretData.SecretString!);
-  console.log(`got the db secrets. User: ${username}, Pass: ${password}`);
-
-  const connection = await mysql.createConnection({
-    host: DB_HOST,
-    user: username,
-    password: password,
-    multipleStatements: true,
-    database: "HogwartsDb",
-  });
-  console.log("successfully connected to db: ", connection);
+  const db = await getDb(DB_HOST, DB_SECRET);
 
   try {
-    const x = await connection.execute(
+    // TODO if I have time: guard against SQL injection
+    const x = await db.execute(
       `SELECT * FROM Notifications WHERE recipient EQUALS ${recipient}`
     );
     return {

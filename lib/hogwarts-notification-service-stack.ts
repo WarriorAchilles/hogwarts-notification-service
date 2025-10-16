@@ -69,26 +69,23 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       );
     `;
 
-    const executeSqlLambda = new lambda.Function(this, "executeSqlLambda", {
+    const createDbLambda = new lambda.Function(this, "createDbLambda", {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: "lambda/executeSqlLambda.handler",
+      handler: "lambda/createDbLambda.handler",
       code: code,
       vpc,
     });
-    executeSqlLambda.addEnvironment(
-      "DB_HOST",
-      cluster.clusterEndpoint.hostname
-    );
-    executeSqlLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
+    createDbLambda.addEnvironment("DB_HOST", cluster.clusterEndpoint.hostname);
+    createDbLambda.addEnvironment("DB_SECRET", dbSecret.secretArn);
 
-    dbSecret.grantRead(executeSqlLambda);
+    dbSecret.grantRead(createDbLambda);
 
     new custom_resources.AwsCustomResource(this, "CreateTableCustomResource", {
       onCreate: {
         service: "Lambda",
         action: "invoke",
         parameters: {
-          FunctionName: executeSqlLambda.functionName,
+          FunctionName: createDbLambda.functionName,
           Payload: JSON.stringify({
             ResourceProperties: {
               secretArn: dbSecret.secretArn,
@@ -104,7 +101,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
         service: "Lambda",
         action: "invoke",
         parameters: {
-          FunctionName: executeSqlLambda.functionName,
+          FunctionName: createDbLambda.functionName,
           Payload: JSON.stringify({
             ResourceProperties: {
               secretArn: dbSecret.secretArn,
@@ -119,7 +116,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
       policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
           actions: ["lambda:InvokeFunction"],
-          resources: [executeSqlLambda.functionArn],
+          resources: [createDbLambda.functionArn],
         }),
       ]),
     });
@@ -194,6 +191,7 @@ export class HogwartsNotificationServiceStack extends cdk.Stack {
     const addNotificationLambdaUrl = addNotificationLambda.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
     });
+    notificationQueue.grantSendMessages(addNotificationLambda);
     addNotificationLambda.addEnvironment(
       "NOTIFICATION_QUEUE_URL",
       notificationQueue.queueUrl
