@@ -110,7 +110,7 @@ Example request:
 
 Example response:
 
-```json
+```
 Successfully queued notification!
 ```
 
