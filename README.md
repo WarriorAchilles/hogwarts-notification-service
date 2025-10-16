@@ -1,6 +1,6 @@
 # Hogwarts Notifications Service
 
-The system is structured as follows:
+## System Structure
 
 - An API gateway handling requests
 - the `retrieveNotifications` lambda queries the database to get the needed notifications
@@ -8,10 +8,19 @@ The system is structured as follows:
 - the `notificationQueue` holds all the queued notifications, sending them to be processed by the `processNotification` lambda
 - the `processNotification` lambda handles the actual sending of the notification (for the purposes of this project, it just logs that the notification was sent) and then updates the notification in the database to reflect that it has been sent
 - the `notifications` database. This is a simple table that holds all the notifications
+- the `createDbLambda` function creates the database and `Notifications` table when the project is deployed to AWS
 
 ![diagram](./hogwarts-api-structure.png)
 
-Theoretically this could be extended to add a Dead Letter Queue to collect failures
+### Tradeoffs and improvements
+
+- Add a DLQ for notifications that fail
+- integrate `processNotification` with some service that actually does something with a notification
+- Add notifications to a different queue before being added to the database initially, to prevent DB connection pool from being overloaded
+- Add another lambda running on a cron job that allows notifications to be scheduled
+  - This would involve adding a data field for scheduled time to notifications
+  - Is cron job lambda actually the best way to do this? If you have to check every minute that sounds expensive...not sure
+- I _think_ I'm guarding against SQL injection properly, but there might be more improvements there.
 
 ## DB Structure
 
@@ -24,6 +33,16 @@ Columns:
 - message
 - status
 - createdAt
+
+## General Thought Process
+
+Here's a general outline of my thought process as I read the instructions:
+
+- API endpoints, so we'll need an API Gateway
+- Each endpoint can trigger a specific lambda
+- We'll need a database to hold the notifications
+- Instructions mention queueing a message to be sent, and also the "flow of messages", so we should use an SQS queue to hold the messages before they're sent.
+- Another lambda can process/"send" the notifications and grab them from the queue.
 
 ## Setup instructions
 
@@ -71,6 +90,8 @@ cdk destroy
 **WARNING**: This will also destroy the database, and any data in it will be lost.
 
 ## Example requests/responses
+
+**NOTE:** All requests must have the `X-API-Key` header. The static api key defined for the purpose of testing this project is `harryPotterAndTheSorcerersStone`
 
 ### POST /notifications
 
