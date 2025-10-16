@@ -21,6 +21,8 @@
   - This would involve adding a data field for scheduled time to notifications
   - Is cron job lambda actually the best way to do this? If you have to check every minute that sounds expensive...not sure
 - I _think_ I'm guarding against SQL injection properly, but there might be more improvements there.
+- The database and API are currently publicly accessible. This made it easier to test, but wouldn't be ideal for a real production environment.
+  - Ideally everything would have access within the vpc, preventing external access except where explicitly needed.
 
 ## DB Structure
 
