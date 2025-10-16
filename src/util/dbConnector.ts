@@ -10,7 +10,7 @@ export default async function getDb(
     .getSecretValue({ SecretId: secret })
     .promise();
   const { username, password } = JSON.parse(secretData.SecretString!);
-  console.log(`got the db secrets. User: ${username}, Pass: ${password}`);
+  //   console.log(`got the db secrets. User: ${username}, Pass: ${password}`);
 
   const connection = await mysql.createConnection({
     host: host,

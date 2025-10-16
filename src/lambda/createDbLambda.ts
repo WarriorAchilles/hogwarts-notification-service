@@ -1,11 +1,9 @@
-import { SecretsManager } from "aws-sdk";
 import getDb from "../util/dbConnector";
 
 const DB_HOST = process.env.DB_HOST || "";
 const DB_SECRET = process.env.DB_SECRET || "";
 
 exports.handler = async (event: any) => {
-  const secretsManager = new SecretsManager();
   // all this local environment stuff is so I can re-run this lamdba if I need to for some reason
   let host = event?.ResourceProperties?.endpoint ?? DB_HOST;
   let sqlScript =
@@ -25,6 +23,7 @@ exports.handler = async (event: any) => {
     const db = await getDb(host, secret);
     await db.execute(sqlScript);
     console.log("Successfully created database");
+    await db.end();
     return { Status: "SUCCESS" };
   } catch (error) {
     console.error("Error executing SQL:", error);

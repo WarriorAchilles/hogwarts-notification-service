@@ -49,6 +49,7 @@ export const handler = async (
         [id, payload.recipient, payload.message, "queued"]
       );
     } catch (e) {
+      await db.end();
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
@@ -81,6 +82,7 @@ export const handler = async (
       const data = await sqsClient.send(command);
       console.info(`Message sent: ${JSON.stringify(data, null, 2)}`);
     } catch (e) {
+      await db.end();
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
@@ -88,6 +90,7 @@ export const handler = async (
       };
     }
 
+    await db.end();
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },

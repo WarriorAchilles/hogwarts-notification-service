@@ -26,6 +26,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
     } catch (e) {
       console.error(`Error interacting with DB: ${e}`);
     }
+    await db.end();
   } catch (e) {
     console.error(e);
   }

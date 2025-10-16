@@ -28,12 +28,14 @@ export const handler = async (
           [recipient]
         );
       }
+      await db.end();
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(items[0], null, 2),
       };
     } catch (e) {
+      await db.end();
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
