@@ -91,6 +91,8 @@ Successfully queued notification!
 
 ### GET /notifications/{recipient}
 
+Optional querystring param: `limit`. Limits the number of returned items.
+
 Example response:
 
 ```json
