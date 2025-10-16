@@ -1,6 +1,4 @@
 import { SQSEvent } from "aws-lambda";
-import { SecretsManager } from "aws-sdk";
-import * as mysql from "mysql2/promise";
 import getDb from "../util/dbConnector";
 
 const DB_HOST = process.env.DB_HOST || "";
@@ -18,9 +16,8 @@ export const handler = async (event: SQSEvent): Promise<void> => {
     // update message record in database
     const db = await getDb(DB_HOST, DB_SECRET);
     try {
-      // TODO: update this to correct SQL
-      const x = await db.execute(
-        `SELECT * FROM Notifications WHERE id EQUALS ${payload.notificationId}`
+      await db.execute(
+        `UPDATE Notifications SET status = 'delivered' WHERE id = '${payload.notificationId}'`
       );
       console.log("sucessfully updated message in database");
     } catch (e) {
